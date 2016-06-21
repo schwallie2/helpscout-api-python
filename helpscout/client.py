@@ -25,7 +25,7 @@ class Client(object):
         return self.page(url, "Folder", 200, **kwargs)
 
     def conversations_for_folder(self, mailbox_id, folder_id, fields=None, **kwargs):
-        url = "mailboxes/{}/folders/{}/converstations.json".format(mailbox_id, folder_id)
+        url = "mailboxes/{}/folders/{}/conversations.json".format(mailbox_id, folder_id)
         url = add_fields(url, fields)
         return self.page(url, "Conversation", 200, **kwargs)
 
