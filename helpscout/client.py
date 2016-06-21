@@ -1,7 +1,10 @@
-import requests
-import json
-from . import models
 import inspect
+import json
+
+import requests
+
+from . import models
+
 
 class Client(object):
     def __init__(self):
@@ -75,18 +78,30 @@ class Client(object):
         url = "search/conversations.json?query=({})&sort_field={}&sort_order={}".format(query, sort_field, sort_order)
         return self.page(url, "Search", 200, **kwargs)
 
-    def call_server(self, url, expected_code, **params):
-        headers = {'Content-Type': 'application-json',
-                   'Accept' : 'application-json',
-                   'Accept-Encoding' : 'gzip, deflate'
-                  }
-        req = requests.get('{}{}'.format(self.base_url, url),
-                           headers=headers, auth=(self.api_key, 'x'), params=params)
+    def move_folder(self, conversation_id, new_mailbox_id):
+        params = {}
+        params['mailbox'] = {'id': str(new_mailbox_id)}
+        url = 'conversations/{}.json'.format(str(conversation_id))
+        return self.item(url, "Thread", 200, call_type='put', params=params)
+
+    def call_server(self, url, expected_code, call_type='get', **params):
+        if call_type == 'get':
+            headers = {'Content-Type': 'application-json',
+                       'Accept': 'application-json',
+                       'Accept-Encoding': 'gzip, deflate'}
+            req = requests.get('{}{}'.format(self.base_url, url),
+                               headers=headers, auth=(self.api_key, 'x'), params=params)
+        elif call_type == 'put':
+            headers = {'Content-Type': 'application/json',
+                       'Accept': 'application/json',
+                       'Accept-Encoding': 'gzip, deflate'}
+            req = requests.put('{}{}'.format(self.base_url, url),
+                               headers=headers, auth=(self.api_key, 'x'), data=json.dumps(params['params']))
         check_status_code(req.status_code, expected_code)
         return req.text
 
-    def item(self, url, cls, expected_code):
-        string_json = self.call_server(url, expected_code)
+    def item(self, url, cls, expected_code, call_type='get', **kwargs):
+        string_json = self.call_server(url, expected_code, call_type=call_type, **kwargs)
         return parse(json.loads(string_json)["item"], cls)
 
     def page(self, url, cls, expected_code, **kwargs):
@@ -125,6 +140,7 @@ class Client(object):
             self.pagestate = {}
         return True
 
+
 def check_status_code(code, expected):
     status_codes = {
         '400': 'The request was not formatted correctly',
@@ -136,7 +152,7 @@ def check_status_code(code, expected):
         '429': 'Throttle Limit Reached. Too many requests',
         '500': 'Application Error or Server Error',
         '503': 'Service Temporarily Unavailable'
-        }
+    }
     if code == expected:
         return
     default_status = "Invalid API Key"
@@ -146,11 +162,13 @@ def check_status_code(code, expected):
     else:
         raise ApiException(default_status)
 
+
 def add_fields(url, fields):
     final_str = url
     if fields != None and len(fields) > 0:
         final_str = "{}?fields={}".format(url, ','.join(fields))
     return final_str
+
 
 def parse(json_obj, cls):
     obj = getattr(models, cls)()
@@ -158,10 +176,12 @@ def parse(json_obj, cls):
         setattr(obj, key.lower(), value)
     return obj
 
+
 def parse_list(lst, cls):
     for i in range(len(lst)):
         lst[i] = parse(lst[i], cls)
     return lst
+
 
 class Page:
     def __init__(self):
@@ -169,10 +189,11 @@ class Page:
         self.pages = None
         self.count = None
         self.items = None
+
     def __getitem__(self, index):
         return self.items[index]
 
-    
+
 class ApiException(Exception):
     def __init__(self, message):
         Exception.__init__(self, message)
