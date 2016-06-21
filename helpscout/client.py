@@ -84,6 +84,12 @@ class Client(object):
         url = 'conversations/{}.json'.format(str(conversation_id))
         return self.item(url, "Thread", 200, call_type='put', params=params)
 
+    def change_subject(self, conversation_id, new_subject):
+        params = {}
+        params['subject'] = str(new_subject)
+        url = 'conversations/{}.json'.format(str(conversation_id))
+        return self.item(url, "Thread", 200, call_type='put', params=params)
+
     def call_server(self, url, expected_code, call_type='get', **params):
         if call_type == 'get':
             headers = {'Content-Type': 'application-json',
@@ -102,7 +108,8 @@ class Client(object):
 
     def item(self, url, cls, expected_code, call_type='get', **kwargs):
         string_json = self.call_server(url, expected_code, call_type=call_type, **kwargs)
-        return parse(json.loads(string_json)["item"], cls)
+        if string_json:
+            return parse(json.loads(string_json)["item"], cls)
 
     def page(self, url, cls, expected_code, **kwargs):
         # support calling many times to get subsequent pages
