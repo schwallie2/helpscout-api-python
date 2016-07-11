@@ -29,8 +29,12 @@ class Client(object):
         url = add_fields(url, fields)
         return self.page(url, "Conversation", 200, **kwargs)
 
-    def conversations_for_mailbox(self, mailbox_id, fields=None, **kwargs):
-        url = add_fields("mailboxes/{}/conversations.json".format(mailbox_id), fields)
+    def conversations_for_mailbox(self, mailbox_id, page=None, fields=None, **kwargs):
+        if page is None:
+            url = "mailboxes/{}/conversations.json".format(mailbox_id)
+        else:
+            url = "mailboxes/{}/conversations.json?page={}".format(mailbox_id, page)
+        url = add_fields(url, fields)
         return self.page(url, "Conversation", 200, **kwargs)
 
     def conversations_for_customer_by_mailbox(self, mailbox_id, customer_id, fields=None, **kwargs):
